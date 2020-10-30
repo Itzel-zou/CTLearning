@@ -1,0 +1,60 @@
+#正方形的投影正弦图
+#思想：射线转
+import numpy as np
+import math
+import matplotlib.pyplot as plt
+
+#conditions:正方形边长为4；探测器每次水平移动0.01，一共+-3；
+# 探测器每次逆时针转1°，一共180°；线性衰减系数为1.
+a = 2              #正方形边长为4，a为其一半.
+p = 5              #p为线性衰减系数，此时设为为1
+x = np.linspace(-3, 3, 600)        # x为每次水平移动的横坐标
+theta = np.linspace(0, math.pi, 180)    #theta为射线与y轴正半轴的夹角
+project = np.arange(180*600).reshape(180,600)   #project用于存放求得的投影值
+#初始化投影值均为0
+for i in range(0, 180):
+    for j in range(0, 600):
+        project[i][j] = 0
+
+#计算不同方向、不同位置的投影值
+k = -1                     #k用来记录是第几次转角，便于写入矩阵的第k列数据
+for i in theta:           #i表示过原点且与入射方向垂直的直线与y轴所成的夹角
+    k = k + 1             #每循环一次意味着转一次角，开始计算下一组投影
+    h = -1                     #h用来记录是第几次平移，便于写入矩阵的第h行数据
+    i = min(i, math.pi - i)
+    a1 = math.sin(i)         #a1为求解公式中的正弦值，保留两位小数
+    a2 = math.cos(i)         #a2为求解公式中的余弦值，保留两位小数
+    b1 = max(a1, a2)                  #简化了程序，否则要分角度大于45°和小于45°的情况
+    b2 = min(a1, a2)
+    a3 = a/b1                  #a3为投影分段函数的第一个结点
+    a4 = (a/b1)- 2*a*b2                #a4为投影的第二个结点
+    if i % 90 ==0 :              #若夹角为90°，则投影就是其边长
+        for j in range(100, 500):     #此时照的到的地方就是边长，否则为0 
+            project[k][j] = 4*p              
+    else :
+        for x0 in x:
+            h = h + 1
+            if x0 < -a3 :
+                project[k][h] = 0
+            elif x0 < -a4 :
+                project[k][h] = p * (a/(b1*b1*b2) + x0/(b1*b2))
+            elif x0 < a4 :
+                project[k][h] = p * (min(2*a/b1, 255))
+            elif x0 < a3 :
+                project[k][h] = p * (a/(b1*b1*b2) - x0/(b1*b2))
+            else :
+                project[k][h] = 0
+  
+#将得到的投影取整，以便于转化为像素值
+for i in range(0, 180):
+#    print("第" , i, "行(转了", i ,"度):")
+    for j in range(0, 600):
+        project[i][j] = int(project[i][j])
+#        print (project[i][j], end = ',')  
+#    print ("\n")
+      
+#画图
+plt.imshow(project, cmap = 'gray')
+plt.title("a sine diagram of a square")
+plt.legend()
+plt.show()
